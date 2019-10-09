@@ -1,13 +1,26 @@
 #Written using pygame 1.9.4
+from copy import deepcopy
 import numpy as np
 import statistics
 import pygame
 import random
 import math
 
+#Learning Settings
+NOSNAKES = 50 # Must be multiple of 5
+NUMGEN = 20 # How many iterations of snakes are produced
+BRATE = 0.1 
+WRATE = 1
+
+#Network Settings
+INPUTS = 6
+HIDDEN = 3
+HIDDENLEN = 8
+OUTPUTS = 4
+
 #Game Settings
 food_limit = 10
-session_moves = 100
+session_moves = 200
 showScreen = False
 
 #Colors
@@ -15,8 +28,8 @@ RED = (255,0,0)
 BLACK = (0,0,0)
 ORANGE = (255,165,0)
 
-#Pygame sprite class - taken from website
-class Block(pygame.sprite.Sprite):
+
+class Block(pygame.sprite.Sprite): # Pygame sprite class - taken from website
 
 	# Constructor. Pass in the color of the block,
 	# and its x and y position
@@ -34,10 +47,12 @@ class Block(pygame.sprite.Sprite):
 	   # Update the position of this object by setting the values of rect.x and rect.y
 	   self.rect = self.image.get_rect(width=20,height=20)
 
+
 class snakeGame(): #----------------------------------------------------------------------
 
 	def __init__(self, food_limit):
 
+		self.foodLocations = [[140, 300], [220, 140], [360, 220], [220, 320], [320, 260], [140, 320], [360, 360], [280, 400], [160, 460], [20, 120], [140, 180], [400, 20], [300, 100], [340, 260], [340, 80], [40, 140], [440, 180], [160, 20], [80, 260], [0, 360], [140, 380], [220, 300], [120, 220], [360, 340], [40, 340], [40, 320], [440, 220], [440, 100], [200, 140], [120, 440], [20, 40], [60, 400], [0, 440], [300, 80], [380, 300], [400, 360], [360, 60], [360, 240], [60, 180], [320, 280], [180, 0], [240, 340], [180, 60], [240, 320], [380, 440], [460, 440], [200, 60], [20, 280], [80, 380], [440, 0]]
 		#Constants
 		self.snake_length = 3
 		self.food_limit = food_limit
@@ -64,24 +79,29 @@ class snakeGame(): #------------------------------------------------------------
 		#Creating food
 		self.food_eaten = 0
 		self.food = Block(ORANGE,20,20) #Sets color,width,height
-		self.food.rect.x = random.randrange(self.screen_width)
-		self.food.rect.y = random.randrange(self.screen_height)
+		self.food.rect.x = self.foodLocations[0][0]
+		self.food.rect.y = self.foodLocations[0][1]
 		self.all_sprites_list.add(self.food)
 
 	def moveSnake(self, direction):
 		"""Least semantic code yet functional"""
 		first = True
+		snakeDie = False
 		for link in self.snake_list:
 
 			# For wrapping snake around screen
 			if link.rect.x > self.screen_width-20:
 				link.rect.x = 0
+				snakeDie = True
 			elif link.rect.x < 0:
 				link.rect.x += self.screen_width
+				snakeDie = True
 			if link.rect.y > self.screen_height-20:
 				link.rect.y = 0
+				snakeDie = True
 			elif link.rect.y < 0:
 				link.rect.y += self.screen_height
+				snakeDie = True
 
 			if first:
 				prevLinkX = link.rect.x
@@ -102,7 +122,7 @@ class snakeGame(): #------------------------------------------------------------
 				link.rect.x = prevLinkX
 				prevLinkY = currentLinkY
 				prevLinkX = currentLinkX
-		return(currentLinkX,currentLinkY)
+		return(currentLinkX,currentLinkY,snakeDie)
 
 	def getHead(self):
 		"""Returns xy pos of head and object"""
@@ -122,8 +142,8 @@ class snakeGame(): #------------------------------------------------------------
 		foodHit = pygame.sprite.spritecollide(self.food, self.snake_list, False)
 		if len(foodHit)>0:
 			self.food_eaten+=1
-			self.food.rect.x = random.randrange(0,self.screen_width,20)
-			self.food.rect.y = random.randrange(0,self.screen_height,20)
+			self.food.rect.x = self.foodLocations[self.food_eaten+1][0]
+			self.food.rect.y = self.foodLocations[self.food_eaten+1][1]
 			return(True)
 
 	def snakeVision(self, headPos, direction):
@@ -161,7 +181,7 @@ class snakeGame(): #------------------------------------------------------------
 		self.food_eaten = 0
 		prevDirection = "right"
 		direction = "right"
-		random.seed(1)
+		#random.seed(1)
 		running = True
 		turns = 0
 		moves = 0
@@ -188,11 +208,11 @@ class snakeGame(): #------------------------------------------------------------
 			hy = self.getHead()[1]
 			fx = self.food.rect.x
 			fy = self.food.rect.y
-			fv = math.sqrt((hx-fx)**2 + (hy-fy)**2)
+			fv = math.sqrt((hx-fx)**2 + (hy-fy)**2) #Distance to food
 			v = self.snakeVision((hx,hy),direction)
 			inputs = [hx, hy, fx, fy, fv, v]
 			direction = self.snakeDecision(network,inputs)
-			prevX,prevY = self.moveSnake(direction)
+			prevX,prevY,snakeDie = self.moveSnake(direction)
 
 			if prevDirection != direction: # For scoring snake for turns
 				prevDirection = direction
@@ -214,7 +234,10 @@ class snakeGame(): #------------------------------------------------------------
 				self.clock.tick(60) # Moves time forward
 			moves += 1 # For counting number of moves
 
-		snakeScore = (turns*0.1)+(1*self.food_eaten)
+			if snakeDie: # Checks if the snake hits the edge of the screen
+				running = False
+
+		snakeScore = self.food_eaten + (moves*0.01) - (turns*0.01) #self.food_eaten*10 + moves #(turns*0.1)+(1*self.food_eaten)
 		if showScreen:
 			print(snakeScore)
 		return(snakeScore)
@@ -285,6 +308,7 @@ class NeuralNetwork: #----------------------------------------------------------
 
 		return(self.aLs[self.networkLen-1]) 
 
+
 class trainSet(): #----------------------------------------------------------------------
 
 	def __init__(self, snakes_per_gen, bias_rate, weight_rate):
@@ -302,12 +326,13 @@ class trainSet(): #-------------------------------------------------------------
 		self.biasChanges = []
 
 		self.highestScore = 0
-		self.highestSnake = []
+		self.highestSnake = 0
+		self.highestSnakes = []
+		self.highestScores = []
 
 		for snakeNo in range(snakes_per_gen):
-			snakeBrain = NeuralNetwork(6,3,8,4)
+			snakeBrain = NeuralNetwork(INPUTS,HIDDEN,HIDDENLEN,OUTPUTS)
 			self.snakeGen.append(snakeBrain)
-
 
 	def runSet(self):
 		"""Runs snakes through a single generation"""
@@ -316,14 +341,15 @@ class trainSet(): #-------------------------------------------------------------
 			session = snakeGame(food_limit)
 			snakeScore = session.runGame(snake)
 			newScores.append(snakeScore)
-
 		self.snakeScores = newScores
 
 	def passGenes(self):
 		highestScoreIndex = self.snakeScores.index(max(self.snakeScores)) # Gets index of highest scoring snake
+		self.highestSnakes.append(deepcopy(self.snakeGen[highestScoreIndex]))
+		self.highestScores.append(self.snakeScores[highestScoreIndex])
 		if self.snakeScores[highestScoreIndex] > self.highestScore:
-			self.highestSnake = self.snakeGen[highestScoreIndex]
 			self.highestScore = self.snakeScores[highestScoreIndex]
+			self.highestSnake = self.snakeGen[highestScoreIndex]
 
 		topSnakes = []
 		topSnakeCount = self.snakes_per_gen/5
@@ -336,36 +362,32 @@ class trainSet(): #-------------------------------------------------------------
 		newSnakes = []
 		for snake in topSnakes: # For every snake in topSnakes makes children
 			newSnakes.append(snake)
-			snakeCopy = snake
+			snakeCopy = deepcopy(snake)
 			for child in range(int(self.snakes_per_gen/5-1)):
-				snake = snakeCopy
+				snake = deepcopy(snakeCopy)
 				snake.chgWeights(self.weight_rate)
 				snake.chgBiases(self.bias_rate)
 				newSnakes.append(snake)
-		#print("newSnakes", len(newSnakes))
 		self.snakeGen = newSnakes
 
-
-
 	def train(self, generations):
-		seedList = [i for i in range(2,generations+2)]
+		# seedList = [i for i in range(2,generations+2)] #To create random values for learning but keep food spawns static
 		for genNo in range(generations):
-			print(genNo, "Avg Score: ", statistics.mean(self.snakeScores))
+			print(genNo, "Avg Score: ", statistics.mean(self.snakeScores), max(self.snakeScores))
 			self.runSet() # Changes self.snakeScores
-			random.seed(seedList[genNo])
+			#random.seed(seedList[genNo])
 			self.passGenes()
 
-		
 
-
-set1 = trainSet(50,0.1,0.3)
-set1.train(5)
+set1 = trainSet(NOSNAKES,BRATE,WRATE)
+set1.train(NUMGEN)
 
 showScreen = True
-print("Highest Score:", set1.highestScore)
-bestSession = snakeGame(food_limit)
-bestSession.runGame(set1.highestSnake)
+for sn in range(len(set1.highestSnakes)):
+	print(sn, set1.highestScores[sn])
+	sesh = snakeGame(food_limit)
+	sesh.runGame(set1.highestSnakes[sn])
 
-
-
-
+# print("Highest Score:", set1.highestScore)
+# bestSession = snakeGame(food_limit)
+# bestSession.runGame(set1.highestSnake)
