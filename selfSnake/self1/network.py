@@ -53,6 +53,9 @@ class NeuralNetwork:
 
 			prevOut = self.aLs[layerNo]
 			lW = self.weights[layerNo]
+			print(lW)
+			print(self.weights[layerNo])
+			print("adga")
 			lB = self.biases[layerNo]
 			layerOut = self.sigmoid(np.add(np.dot(lW,prevOut),lB))
 
@@ -62,8 +65,8 @@ class NeuralNetwork:
 
 		return(self.aLs[self.networkLen-1]) 
 
-# tst = NeuralNetwork(4,3,5,4)
-# tst.run(data)
+tst = NeuralNetwork(4,3,5,4)
+tst.run(data)
 
 
 
