@@ -17,11 +17,11 @@ screen_height = 500
 session_moves = 100
 
 #Training Settings
-WRATE, BRATE = 1, 0.1
-GENERATIONS = 10
+WRATE, BRATE = 0.001, 0.1
+GENERATIONS = 200
 INPUTS = 6
-HIDDEN = 4
-HIDDENLEN = 10
+HIDDEN = 10
+HIDDENLEN = 3
 OUTPUTS = 3
 
 #Pygame sprite class - taken from website
@@ -265,7 +265,7 @@ class snakeGame(): #------------------------------------------------------------
 			if snakeDie or self.snakeCollide(): # Checks if the snake hits the edge of the screen or itself
 				running = False
 
-		snakeScore = (moves*0.01) - (turns*0.01)#(self.food_eaten*0.7) + (moves*0.01) - (turns*0.01)
+		snakeScore = (self.food_eaten*0.7) #+ (moves*0.01) - (turns*0.01)
 		if self.showScreen:
 			print(snakeScore)
 		# pygame.quit()

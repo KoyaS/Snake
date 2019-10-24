@@ -17,10 +17,10 @@ screen_height = 500
 session_moves = 100
 
 #Training Settings
-WRATE, BRATE = 1, 0.1
-GENERATIONS = 10
+WRATE, BRATE = 0.7, 0.3
+GENERATIONS = 300
 INPUTS = 6
-HIDDEN = 4
+HIDDEN = 5
 HIDDENLEN = 10
 OUTPUTS = 3
 
@@ -265,7 +265,7 @@ class snakeGame(): #------------------------------------------------------------
 			if snakeDie or self.snakeCollide(): # Checks if the snake hits the edge of the screen or itself
 				running = False
 
-		snakeScore = (moves*0.01) - (turns*0.01)#(self.food_eaten*0.7) + (moves*0.01) - (turns*0.01)
+		snakeScore = (self.food_eaten*0.7) + (moves*0.01) - (turns*0.01)
 		if self.showScreen:
 			print(snakeScore)
 		# pygame.quit()
@@ -351,7 +351,7 @@ class set():
 	def train(self, generations):
 		for generation in range(generations):
 			self.runSnakes()
-			if generation%5 == 0:
+			if generation%50 == 0:
 				print(generation, mean(self.snakeScores), max(self.snakeScores))
 			self.passGenes()
 
@@ -400,16 +400,26 @@ class set():
 #Comment out when using viewTool
 # ---------------------------------------------------
 population = set(WRATE, BRATE)
+
+with open('generationHolder.pkl', 'rb') as input:
+	snakeGen = pickle.load(input)
+	population.snakeGen = snakeGen
+
 population.train(GENERATIONS)
 
-print("HIGHEST SCORE: ", population.highestScore)
-for i in range(10):
-	bestSession = snakeGame(10)
-	bestSession.showScreen = True
-	bestSession.runGame(population.highestSnake)
+# print("HIGHEST SCORE: ", population.highestScore)
+# for i in range(10):
+# 	bestSession = snakeGame(10)
+# 	bestSession.showScreen = True
+# 	bestSession.runGame(population.highestSnake)
+
+with open('generationHolder.pkl', 'wb') as output:
+	print("Writing to generationHolder.pkl")
+	snakeGen = population.snakeGen
+	pickle.dump(snakeGen, output, pickle.HIGHEST_PROTOCOL)
 
 with open('bestSnake.pkl', 'wb') as output:
-	print('got here')
+	print('Writing to bestSnake.pkl')
 	bestSnake = copy.deepcopy(population.highestSnake)
 	pickle.dump(bestSnake, output, pickle.HIGHEST_PROTOCOL)
 # ---------------------------------------------------

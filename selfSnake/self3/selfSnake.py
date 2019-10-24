@@ -8,15 +8,15 @@ import random
 import math
 
 #Learning Settings
-NOSNAKES = 50 # Must be multiple of 5
-NUMGEN = 100 # How many iterations of snakes are produced
+NOSNAKES = 100 # Must be multiple of 5
+NUMGEN = 200 # How many iterations of snakes are produced
 BRATE = 0.01
-WRATE = 1
+WRATE = 0.5
 
 #Network Settings
-INPUTS = 6
-HIDDEN = 5
-HIDDENLEN = 8
+INPUTS = 8
+HIDDEN = 2
+HIDDENLEN = 10
 OUTPUTS = 4
 
 #Game Settings
@@ -210,8 +210,10 @@ class snakeGame(): #------------------------------------------------------------
 			fx = self.food.rect.x
 			fy = self.food.rect.y
 			fv = math.sqrt((hx-fx)**2 + (hy-fy)**2) #Distance to food
+			fdx = fx - hx
+			fdy = fy - hy
 			v = self.snakeVision((hx,hy),direction)
-			inputs = [hx, hy, fx, fy, fv, v]
+			inputs = [hx, hy, fx, fy, fv, v, fdx, fdy]
 			direction = self.snakeDecision(network,inputs)
 			prevX,prevY,snakeDie = self.moveSnake(direction)
 

@@ -8,7 +8,7 @@ import math
 
 #Learning Settings
 NOSNAKES = 50 # Must be multiple of 5
-NUMGEN = 20 # How many iterations of snakes are produced
+NUMGEN = 200 # How many iterations of snakes are produced
 BRATE = 0.1 
 WRATE = 1
 
