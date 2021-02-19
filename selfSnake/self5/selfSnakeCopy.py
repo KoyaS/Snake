@@ -17,12 +17,12 @@ screen_height = 500
 session_moves = 100
 
 #Training Settings
-WRATE, BRATE = 0.7, 0.3
-GENERATIONS = 300
+WRATE, BRATE = 1, 1
+GENERATIONS = 100
 INPUTS = 6
-HIDDEN = 5
+HIDDEN = 50
 HIDDENLEN = 10
-OUTPUTS = 3
+OUTPUTS = 4
 
 #Pygame sprite class - taken from website
 class Block(pygame.sprite.Sprite):
@@ -46,6 +46,9 @@ class Block(pygame.sprite.Sprite):
 class snakeGame(): #----------------------------------------------------------------------
 
 	def __init__(self, food_limit):
+
+		random.seed(1)
+
 		self.showScreen = False
 
 		#Constants
@@ -241,6 +244,7 @@ class snakeGame(): #------------------------------------------------------------
 				appFood = 0
 			# inputs = [hx, hy, fdx, fdy, fv, v, pfv]
 			inputs = [v, appFood, fdx, fdy, hx, hy]
+
 			direction = self.snakeDecision(network,inputs,direction)
 			prevX,prevY,snakeDie = self.moveSnake(direction)
 			pfv = fv # Previous move's distance to food(snake sees if getting farther)
@@ -265,7 +269,7 @@ class snakeGame(): #------------------------------------------------------------
 			if snakeDie or self.snakeCollide(): # Checks if the snake hits the edge of the screen or itself
 				running = False
 
-		snakeScore = (self.food_eaten*0.7) + (moves*0.01) - (turns*0.01)
+		snakeScore = (self.food_eaten*10) + (moves*0.01) - (turns*0.02) - fv/1000
 		if self.showScreen:
 			print(snakeScore)
 		# pygame.quit()
@@ -311,6 +315,9 @@ class NeuralNetwork: #----------------------------------------------------------
 			for weights in layer:
 					neuronChanges = np.random.uniform(-change_rate, change_rate,len(weights))
 					weights += neuronChanges
+
+					# weights = weights/np.amax(weights) # Normalize weights between 0-1
+
 					newLayer.append(weights)
 			newWeights.append(newLayer)
 		self.weights = newWeights
@@ -343,31 +350,43 @@ class set():
 	def __init__(self, wRate, bRate):
 		self.wRate = wRate
 		self.bRate = bRate
-		self.highestScore = 0
-		self.highestSnake = 0
+		self.highestScore = -100
+		self.highestSnake = -100
 		self.snakeScores = [0 for i in range (50)]
 		self.snakeGen = [NeuralNetwork(INPUTS,HIDDEN,HIDDENLEN,OUTPUTS) for i in range(50)]
 
 	def train(self, generations):
 		for generation in range(generations):
 			self.runSnakes()
-			if generation%50 == 0:
-				print(generation, mean(self.snakeScores), max(self.snakeScores))
+			if generation%10 == 0:
+				print(generation, 'Mean score: ' + str(mean(self.snakeScores)), 'Max score: ' + str(max(self.snakeScores)))
 			self.passGenes()
 
 	def runSnakes(self):
 		newScores = []
 		for snake in self.snakeGen:
-			sessionAvgs = []
-			for sessionNo in range(3):
-				session = snakeGame(10)
-				score = session.runGame(snake)
-				sessionAvgs.append(score)
-				if score > self.highestScore: # Keeping track of best ever snake
-					self.highestScore = score
-					self.highestSnake = copy.deepcopy(snake)
-				del(session)
-			newScores.append(mean(sessionAvgs))
+
+			# Code for averaging a single snake's 3 attempts
+			# sessionAvgs = []
+			# for sessionNo in range(3):
+			# 	session = snakeGame(10)
+			# 	score = session.runGame(snake)
+			# 	sessionAvgs.append(score)
+			# 	if score > self.highestScore: # Keeping track of best ever snake
+			# 		self.highestScore = score
+			# 		self.highestSnake = copy.deepcopy(snake)
+			# 	del(session)
+			# newScores.append(mean(sessionAvgs))
+
+			# Just run game once
+			session = snakeGame(10)
+			score = session.runGame(snake)
+			if score > self.highestScore: # Keeping track of best ever snake
+				self.highestScore = score
+				self.highestSnake = copy.deepcopy(snake)
+			del(session)
+			newScores.append(score)
+
 		self.snakeScores = newScores
 
 	def passGenes(self):
@@ -399,29 +418,30 @@ class set():
 
 #Comment out when using viewTool
 # ---------------------------------------------------
-population = set(WRATE, BRATE)
+if __name__ == '__main__':
+	population = set(WRATE, BRATE)
 
-with open('generationHolder.pkl', 'rb') as input:
-	snakeGen = pickle.load(input)
-	population.snakeGen = snakeGen
+	with open('generationHolder.pkl', 'rb') as input:
+		snakeGen = pickle.load(input)
+		population.snakeGen = snakeGen
 
-population.train(GENERATIONS)
+	population.train(GENERATIONS)
 
-# print("HIGHEST SCORE: ", population.highestScore)
-# for i in range(10):
-# 	bestSession = snakeGame(10)
-# 	bestSession.showScreen = True
-# 	bestSession.runGame(population.highestSnake)
+	# print("HIGHEST SCORE: ", population.highestScore)
+	# for i in range(10):
+	# 	bestSession = snakeGame(10)
+	# 	bestSession.showScreen = True
+	# 	bestSession.runGame(population.highestSnake)
 
-with open('generationHolder.pkl', 'wb') as output:
-	print("Writing to generationHolder.pkl")
-	snakeGen = population.snakeGen
-	pickle.dump(snakeGen, output, pickle.HIGHEST_PROTOCOL)
+	with open('generationHolder.pkl', 'wb') as output:
+		print("Writing to generationHolder.pkl")
+		snakeGen = population.snakeGen
+		pickle.dump(snakeGen, output, pickle.HIGHEST_PROTOCOL)
 
-with open('bestSnake.pkl', 'wb') as output:
-	print('Writing to bestSnake.pkl')
-	bestSnake = copy.deepcopy(population.highestSnake)
-	pickle.dump(bestSnake, output, pickle.HIGHEST_PROTOCOL)
+	with open('bestSnake.pkl', 'wb') as output:
+		print('Writing to bestSnake.pkl')
+		bestSnake = copy.deepcopy(population.highestSnake)
+		pickle.dump(bestSnake, output, pickle.HIGHEST_PROTOCOL)
 # ---------------------------------------------------
 
 
