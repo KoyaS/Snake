@@ -211,7 +211,7 @@ class snakeGame(): #------------------------------------------------------------
 		moves = 0
 		pfv = 0
 
- 		while running:
+		while running:
 
 			#Check if player clicks the X
 			for event in pygame.event.get(): 
@@ -239,7 +239,7 @@ class snakeGame(): #------------------------------------------------------------
 			v = self.snakeVision((hx,hy),direction)
 			if fv-pfv > 0:
 				appFood = 1
- 			else:
+			else:
 				appFood = 0
 			# inputs = [hx, hy, fdx, fdy, fv, v, pfv]
 			inputs = [v, appFood, fdx, fdy, hx, hy]
@@ -427,7 +427,7 @@ if __name__ == '__main__':
 	with open('generationHolder.pkl', 'rb') as input:
 		snakeGen = pickle.load(input)
 		population.snakeGen = snakeGen
-        print('beginning training...')
+		print('beginning training...')
 	population.train(GENERATIONS)
 
 	# print("HIGHEST SCORE: ", population.highestScore)
