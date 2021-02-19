@@ -17,7 +17,7 @@ screen_height = 500
 session_moves = 100
 
 #Training Settings
-WRATE, BRATE = 1, 1
+WRATE, BRATE = 3, 3
 GENERATIONS = 100
 INPUTS = 6
 HIDDEN = 50
@@ -47,7 +47,7 @@ class snakeGame(): #------------------------------------------------------------
 
 	def __init__(self, food_limit):
 
-		random.seed(1)
+		random.seed(5)
 
 		self.showScreen = False
 
@@ -246,6 +246,10 @@ class snakeGame(): #------------------------------------------------------------
 			inputs = [v, appFood, fdx, fdy, hx, hy]
 
 			direction = self.snakeDecision(network,inputs,direction)
+			if direction == None and direction != 'right':
+				direction = 'right'
+			elif direction == None and direction != 'left':
+				direction = 'left'
 			prevX,prevY,snakeDie = self.moveSnake(direction)
 			pfv = fv # Previous move's distance to food(snake sees if getting farther)
 
